@@ -6,6 +6,7 @@ __author__ = 'leo_sheng'
 import asyncio, logging
 
 import aiomysql
+
 def log(sql, args=()):
     logging.info('SQL: %s' % sql)
 
@@ -15,7 +16,7 @@ async def create_pool(loop, **kw):
     __pool = await aiomysql.create_pool(
         host=kw.get('host', 'localhost'),
         port=kw.get('port', 3306),
-        user=kw['user'],
+        user=kw['sylsql'],
         password=kw['lilina009'],
         db=kw['db'],
         charset=kw.get('charset', 'utf8'),
@@ -124,20 +125,21 @@ class ModelMetaclass(type):
         primaryKey = None
         for k, v in attrs.items():
             if isinstance(v, Field):
-                logging.info(' found mapping : %s ==>' % (k, v))
+                logging.info(' found mapping : %s ==> %s' % (k, v))
                 mappings[k] = v
                 if v.primary_key:
                     #找到主题
                     if primaryKey:
                         #raise StandardError
                         raise RuntimeError('Duplicate primary key for field: %s' % k)
+                    primary_key = k
                 else:
                     fields.append(k)
-        if not primaryKey:
+        if not primary_key:
             raise RuntimeError('Primary key not found.')
         for k in mappings.keys():
             attrs.pop(k)
-        escaped_fields = list(map(lambda f: '`%s` % f, fields'))
+        escaped_fields = list(map(lambda f: '`%s`' % f, fields))
         attrs['__mappings__'] = mappings # 保存属性和列的映射关系
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey # 主键属性名
